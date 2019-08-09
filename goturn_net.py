@@ -1,5 +1,12 @@
 import tensorflow as tf
 import numpy as np
+import keras
+from keras.models import Model
+from keras.layers import Dense, Dropout, Activation, Flatten, Input
+from keras.layers import Conv2D, MaxPooling2D
+from keras.layers.merge import add
+from keras import regularizers
+
 class TRACKNET: 
     def __init__(self, batch_size, train = True):
         self.parameters = {}
@@ -15,6 +22,8 @@ class TRACKNET:
         self.target_conv1 = self._conv_relu_layer(bottom = self.target, filter_size = [11, 11, 3, 96],
                                                     strides = [1,4,4,1], name = "target_conv_1")
         
+		
+		
         # now 55 x 55 x 96
         self.target_pool1 = tf.nn.max_pool(self.target_conv1, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
                                                     padding='VALID', name='target_pool1')
@@ -131,7 +140,19 @@ class TRACKNET:
         diff_flat = tf.abs(tf.reshape(diff,[-1]))
         loss = tf.reduce_sum(diff_flat, name = name)
         return loss
-
+	
+	# bottom = self.target, filter_size = [11, 11, 3, 96], strides = [1,4,4,1], name = "target_conv_1")
+	"""
+	
+	
+	Parameters: 
+	bottom (tf.placeholder(tf.float32, [batch_size, 227, 227, 3]): image input 
+	filter_size (array): w, h, in_channels, out_channels
+	strides (array): batch, height, width, channels
+	pad (int): pad int by width & height 
+	bias_init (double): what to initiate bias with 
+	group (1 or 2): determines whether to split this apart
+	"""
     def _conv_relu_layer(self,bottom,filter_size, strides, pad = 0,bias_init = 0.0, group = 1, trainable = False, name = None):
         with tf.name_scope(name) as scope:
 
