@@ -1,35 +1,33 @@
 import tensorflow as tf
 import numpy as np
-import keras
-from keras.models import Model
-from keras.layers import Dense, Dropout, Activation, Flatten, Input
-from keras.layers import Conv2D, MaxPooling2D
-from keras.layers.merge import add
-from keras import regularizers
 
 class TRACKNET: 
     def __init__(self, batch_size, train = True):
         self.parameters = {}
         self.batch_size = batch_size
-        self.target = tf.placeholder(tf.float32, [batch_size, 227, 227, 3])
-        self.image = tf.placeholder(tf.float32, [batch_size, 227, 227, 3])
-        self.bbox = tf.placeholder(tf.float32, [batch_size, 4])
+        self.target = tf.placeholder(tf.float16, [batch_size, 128, 128, 1])
+        self.image = tf.placeholder(tf.float16, [batch_size, 128, 128, 1])
+        self.bbox = tf.placeholder(tf.float16, [batch_size, 4])
         self.train = train
         self.wd = 0.0005
     def build(self):
         ########### for target ###########
         # [filter_height, filter_width, in_channels, out_channels]
+		# pre-residual blocks
+		# conv = tf.nn.conv2d(bottom, kernel, strides, padding='VALID')
+        self.target_conv0 = self._preresid_cnn(self.target, trainable=True)
+        self.target_pool0 = tf.nn.max_pool(self.target_conv0, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
+                                                    padding='VALID', name='target_pool0')
+		
+		# residual block #1
         self.target_conv1 = self._conv_relu_layer(bottom = self.target, filter_size = [11, 11, 3, 96],
-                                                    strides = [1,4,4,1], name = "target_conv_1")
+                                                    strides = [1,4,4,1], name = "target_conv_1", trainable = True, )
         
 		
 		
         # now 55 x 55 x 96
         self.target_pool1 = tf.nn.max_pool(self.target_conv1, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
                                                     padding='VALID', name='target_pool1')
-        # now 27 x 27 x 96
-        self.target_lrn1 = tf.nn.local_response_normalization(self.target_pool1, depth_radius = 2, alpha=0.0001,
-                                                    beta=0.75, name="target_lrn1")
         # now 27 x 27 x 96
 
         self.target_conv2 = self._conv_relu_layer(bottom = self.target_lrn1,filter_size = [5, 5, 48, 256],
@@ -115,16 +113,16 @@ class TRACKNET:
         ########### fully connencted layers ###########
         # 6 * 6 * 256 * 2 == 18432
         # assert self.fc1.get_shape().as_list()[1:] == [6, 6, 512]
-        self.fc1 = self._fc_relu_layers(self.concat, dim = 4096, name = "fc1")
+        self.fc1 = self._fc_relu_layers(self.concat, dim = 512, name = "fc1")
         if (self.train):
             self.fc1 = tf.nn.dropout(self.fc1, 0.5)
 
 
-        self.fc2 = self._fc_relu_layers(self.fc1, dim = 4096, name = "fc2")
+        self.fc2 = self._fc_relu_layers(self.fc1, dim = 512, name = "fc2")
         if (self.train):
             self.fc2 = tf.nn.dropout(self.fc2, 0.5)
 
-        self.fc3 = self._fc_relu_layers(self.fc2, dim = 4096, name = "fc3")
+        self.fc3 = self._fc_relu_layers(self.fc2, dim = 512, name = "fc3")
         if (self.train):
             self.fc3 = tf.nn.dropout(self.fc3, 0.5)
 
@@ -142,58 +140,79 @@ class TRACKNET:
         return loss
 	
 	# bottom = self.target, filter_size = [11, 11, 3, 96], strides = [1,4,4,1], name = "target_conv_1")
+	
+	def _preresid_cnn(self, input, bias_init = 0.0, trainable = False, name = None):
+        kernel = tf.Variable(tf.truncated_normal(filter_size = [5, 5,1, 32], dtype=tf.float16, stddev=1e-2), trainable=trainable, name='weights')
+        biases = tf.Variable(tf.constant(bias_init, shape=[32], dtype=tf.float16), trainable=trainable, name='biases')
+        self.parameters[name] = [kernel, biases]
+        conv = tf.nn.conv2d(input, kernel, strides=[1, 2, 2, 1], padding='SAME')
+        out = tf.nn.bias_add(conv, biases)
+        return out
+		
+	def _resid_half(self, input, filter_size, strides, bias_init = 0.0, trainable = False, name = None):
+        with tf.name_scope(name) as scope:
+            normalized_output = tf.layers.batch_normalization(input, axis=1)
+            relud_output = tf.nn.relu(normalized_output, name=scope)
+            _activation_summary(relud_output)
+			# padding FIX
+			if (pad > 0):
+                paddings = [[0,0],[pad,pad],[pad,pad],[0,0]]
+                input = tf.pad(bottom, paddings, "CONSTANT")
+            kernel = tf.Variable(tf.truncated_normal(filter_size, dtype=tf.float16,
+                                                     stddev=1e-2), trainable=trainable, name='weights')
+            biases = tf.Variable(tf.constant(bias_init, shape=[filter_size[3]], dtype=tf.float16), trainable=trainable, name='biases')
+            self.parameters[name] = [kernel, biases]
+            conv = tf.nn.conv2d(relud_output, kernel, strides, padding='VALID')
+            out = tf.nn.bias_add(conv, biases)
+            return out
+			
+		
 	"""
-	
-	
 	Parameters: 
-	bottom (tf.placeholder(tf.float32, [batch_size, 227, 227, 3]): image input 
+	bottom (tf.placeholder(tf.float16, [batch_size, 227, 227, 3]): image input 
 	filter_size (array): w, h, in_channels, out_channels
 	strides (array): batch, height, width, channels
 	pad (int): pad int by width & height 
 	bias_init (double): what to initiate bias with 
 	group (1 or 2): determines whether to split this apart
+	trainable (boolean): determines whether weights and bias can be changed (aka trained)
+	
+	Returns:
+	tensor: result from relu activation
 	"""
-    def _conv_relu_layer(self,bottom,filter_size, strides, pad = 0,bias_init = 0.0, group = 1, trainable = False, name = None):
+    def _conv_relu_layer(self, input, filter_size, strides, pad = 0,bias_init = 0.0, trainable = False, name = None):
         with tf.name_scope(name) as scope:
 
             if (pad > 0):
                 paddings = [[0,0],[pad,pad],[pad,pad],[0,0]]
-                bottom = tf.pad(bottom, paddings, "CONSTANT")
-            kernel = tf.Variable(tf.truncated_normal(filter_size, dtype=tf.float32,
+                input = tf.pad(bottom, paddings, "CONSTANT")
+            kernel = tf.Variable(tf.truncated_normal(filter_size, dtype=tf.float16,
                                                      stddev=1e-2), trainable=trainable, name='weights')
-            biases = tf.Variable(tf.constant(bias_init, shape=[filter_size[3]], dtype=tf.float32), trainable=trainable, name='biases')
+            biases = tf.Variable(tf.constant(bias_init, shape=[filter_size[3]], dtype=tf.float16), trainable=trainable, name='biases')
             self.parameters[name] = [kernel, biases]
-            if (group == 1):
-                conv = tf.nn.conv2d(bottom, kernel, strides, padding='VALID')
-                out = tf.nn.bias_add(conv, biases)
-            elif (group == 2):
-                kernel1, kernel2 = tf.split(kernel, num_or_size_splits=group, axis=3)
-                bottom1, bottom2 = tf.split(bottom, num_or_size_splits=group, axis=3)
-                conv1 = tf.nn.conv2d(bottom1, kernel1, strides, padding='VALID')
-                conv2 = tf.nn.conv2d(bottom2, kernel2, strides, padding='VALID')
-                conv = tf.concat([conv1, conv2], axis=3)
-                out = tf.nn.bias_add(conv, biases)
-            else:
-                raise TypeError("number of groups not supported")
+            conv = tf.nn.conv2d(bottom, kernel, strides, padding='VALID')
+            out = tf.nn.bias_add(conv, biases)
 
             # if not tf.get_variable_scope().reuse:
             #     weight_decay = tf.multiply(tf.nn.l2_loss(kernel), self.wd,
             #                            name='kernel_loss')
             #     tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
             #                      weight_decay)
-
-
+			
             out2 = tf.nn.relu(out, name=scope)
             _activation_summary(out2)
             out2 = tf.Print(out2, [tf.shape(out2)], message='Shape of %s' % name, first_n = 1, summarize=4)
+			
+			
+			
             return out2
 
     def _fc_relu_layers(self, bottom, dim, name = None):
         with tf.name_scope(name) as scope:
             shape = int(np.prod(bottom.get_shape()[1:]))
             weights = tf.Variable(tf.truncated_normal([shape, dim],
-                                    dtype=tf.float32, stddev=0.005), name='weights')
-            bias = tf.Variable(tf.constant(1.0, shape=[dim], dtype=tf.float32), name='biases')
+                                    dtype=tf.float16, stddev=0.005), name='weights')
+            bias = tf.Variable(tf.constant(1.0, shape=[dim], dtype=tf.float16), name='biases')
             bottom_flat = tf.reshape(bottom, [-1, shape])
             fc_weights = tf.nn.bias_add(tf.matmul(bottom_flat, weights), bias)
             self.parameters[name] = [weights, bias]
@@ -216,8 +235,8 @@ class TRACKNET:
         with tf.name_scope(name) as scope:
             shape = int(np.prod(bottom.get_shape()[1:]))
             weights = tf.Variable(tf.truncated_normal([shape, dim],
-                                    dtype=tf.float32, stddev=0.005), name='weights')
-            bias = tf.Variable(tf.constant(1.0, shape=[dim], dtype=tf.float32), name='biases')
+                                    dtype=tf.float16, stddev=0.005), name='weights')
+            bias = tf.Variable(tf.constant(1.0, shape=[dim], dtype=tf.float16), name='biases')
             bottom_flat = tf.reshape(bottom, [-1, shape])
             top = tf.nn.bias_add(tf.matmul(bottom_flat, weights), bias, name=scope)
             self.parameters[name] = [weights, bias]
