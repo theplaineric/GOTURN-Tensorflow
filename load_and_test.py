@@ -8,8 +8,8 @@ import goturn_net
 
 NUM_EPOCHS = 500
 BATCH_SIZE = 10
-WIDTH = 227
-HEIGHT = 227
+WIDTH = 128
+HEIGHT = 128
 
 logfile = "test.log"
 test_txt = "test_set.txt"
@@ -47,10 +47,10 @@ def data_reader(input_queue):
     search_img = tf.read_file(input_queue[0])
     target_img = tf.read_file(input_queue[1])
 
-    search_tensor = tf.to_float(tf.image.decode_jpeg(search_img, channels = 3))
+    search_tensor = tf.to_float(tf.image.decode_image(search_img, channels = 1))
     search_tensor = tf.image.resize_images(search_tensor,[HEIGHT,WIDTH],
                             method=tf.image.ResizeMethod.BILINEAR)
-    target_tensor = tf.to_float(tf.image.decode_jpeg(target_img, channels = 3))
+    target_tensor = tf.to_float(tf.image.decode_image(target_img, channels = 1))
     target_tensor = tf.image.resize_images(target_tensor,[HEIGHT,WIDTH],
                             method=tf.image.ResizeMethod.BILINEAR)
     box_tensor = input_queue[2]

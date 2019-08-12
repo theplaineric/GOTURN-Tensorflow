@@ -15,89 +15,42 @@ class TRACKNET:
         # [filter_height, filter_width, in_channels, out_channels]
 		# pre-residual blocks
 		# conv = tf.nn.conv2d(bottom, kernel, strides, padding='VALID')
-        self.target_conv0 = self._preresid_cnn(self.target, trainable=True)
+        self.target_conv0 = self._basic_cnn(self.target, filter_size = [5, 5, 1, 32], name=target_conv0)
         self.target_pool0 = tf.nn.max_pool(self.target_conv0, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
                                                     padding='VALID', name='target_pool0')
-		
+													
 		# residual block #1
-        self.target_conv1 = self._conv_relu_layer(bottom = self.target, filter_size = [11, 11, 3, 96],
-                                                    strides = [1,4,4,1], name = "target_conv_1", trainable = True, )
-        
+		self.target_resid_1_connection = self._basic_cnn(self.target_pool0, filter_size = [1, 1, 1, 32], name = target_resid_1_connection)
+        self.target_resid_1a = _resid_half(self.target_pool0, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = target_resid_1a)
+        self.target_resid_1b = _resid_half(self.target_resid_1a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = target_resid_1b)
+		self.target_resid_1_result = tf.add(self.target_resid_1_connection, self.target_resid_1b)
 		
-		
-        # now 55 x 55 x 96
-        self.target_pool1 = tf.nn.max_pool(self.target_conv1, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
-                                                    padding='VALID', name='target_pool1')
-        # now 27 x 27 x 96
-
-        self.target_conv2 = self._conv_relu_layer(bottom = self.target_lrn1,filter_size = [5, 5, 48, 256],
-                                                    strides = [1,1,1,1], pad = 2, bias_init = 1.0, group = 2, name="target_conv_2")
-        # now 27 x 27 x 256
-
-        self.target_pool2 = tf.nn.max_pool(self.target_conv2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
-                                                    padding='VALID', name='target_pool2')
-        # now 13 x 13 x 256
-        self.target_lrn2 = tf.nn.local_response_normalization(self.target_pool2, depth_radius = 2, alpha=0.0001,
-                                                    beta=0.75, name="target_lrn2")
-        # now 13 x 13 x 256
-        self.target_conv3 = self._conv_relu_layer(bottom = self.target_lrn2,filter_size = [3, 3, 256, 384],
-                                                    strides = [1,1,1,1], pad = 1, name="target_conv_3")
-        # now 13 x 13 x 384
-        self.target_conv4 = self._conv_relu_layer(bottom = self.target_conv3,filter_size = [3, 3, 192, 384], bias_init = 1.0, 
-                                                    strides = [1,1,1,1], pad = 1, group = 2, name="target_conv_4")
-        # now 13 x 13 x 384
-        self.target_conv5 = self._conv_relu_layer(bottom = self.target_conv4,filter_size = [3, 3, 192, 256], bias_init = 1.0, 
-                                                    strides = [1,1,1,1], pad = 1, group = 2, name="target_conv_5")
-        # now 13 x 13 x 256
-        self.target_pool5 = tf.nn.max_pool(self.target_conv5, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
-                                                    padding='VALID', name='target_pool5')
-        # now 6 x 6 x 256
-        
+		# residual block #2
+		self.target_resid_2_connection = self._basic_cnn(self.resid_1b, filter_size = [1, 1, 32, 32], name = target_resid_2_connection)
+        self.target_resid_2a = _resid_half(self.target_resid_1b, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = target_resid_2a)
+        self.target_resid_2b = _resid_half(self.target_resid_2a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = target_resid_2b)
+		self.target_resid_2_result = tf.add(self.target_resid_2_connection, self.target_resid_2b)
 
         ########### for image ###########
         # [filter_height, filter_width, in_channels, out_channels]
-        self.image_conv1 = self._conv_relu_layer(bottom = self.image, filter_size = [11, 11, 3, 96],
-                                                    strides = [1,4,4,1], name = "image_conv_1")
-        
-        # now 55 x 55 x 96
-        self.image_pool1 = tf.nn.max_pool(self.image_conv1, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
-                                                    padding='VALID', name='image_pool1')
+		# pre-residual blocks
+		# conv = tf.nn.conv2d(bottom, kernel, strides, padding='VALID')
+        self.image_conv0 = self._basic_cnn(self.image, filter_size = [5, 5, 1, 32], name=image_conv0)
+        self.image_pool0 = tf.nn.max_pool(self.image_conv0, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
+                                                    padding='VALID', name='image_pool0')
+													
+		# residual block #1
+		self.image_resid_1_connection = self._basic_cnn(self.image_pool0, filter_size = [1, 1, 1, 32], name = image_resid_1_connection)
+        self.image_resid_1a = _resid_half(self.image_pool0, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = image_resid_1a)
+        self.image_resid_1b = _resid_half(self.image_resid_1a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = image_resid_1b)
+		self.image_resid_1_result = tf.add(self.image_resid_1_connection, self.image_resid_1b)
+		
+		# residual block #2
+		self.image_resid_2_connection = self._basic_cnn(self.resid_1b, filter_size = [1, 1, 32, 32], name = image_resid_2_connection)
+        self.image_resid_2a = _resid_half(self.image_resid_1b, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = image_resid_2a)
+        self.image_resid_2b = _resid_half(self.image_resid_2a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = image_resid_2b)
+		self.image_resid_2_result = tf.add(self.image_resid_2_connection, self.image_resid_2b)
 
-        # now 27 x 27 x 96
-        self.image_lrn1 = tf.nn.local_response_normalization(self.image_pool1, depth_radius = 2, alpha=0.0001,
-                                                    beta=0.75, name="image_lrn1")
-
-        # now 27 x 27 x 96
-
-        self.image_conv2 = self._conv_relu_layer(bottom = self.image_lrn1,filter_size = [5, 5, 48, 256],
-                                                    strides = [1,1,1,1], pad = 2, bias_init = 1.0, group = 2, name="image_conv_2")
-
-        # now 27 x 27 x 256
-
-        self.image_pool2 = tf.nn.max_pool(self.image_conv2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
-                                                    padding='VALID', name='image_pool2')
-
-        # now 13 x 13 x 256
-        self.image_lrn2 = tf.nn.local_response_normalization(self.image_pool2, depth_radius = 2, alpha=0.0001,
-                                                    beta=0.75, name="image_lrn2")
-
-        # now 13 x 13 x 256
-        self.image_conv3 = self._conv_relu_layer(bottom = self.image_lrn2,filter_size = [3, 3, 256, 384],
-                                                    strides = [1,1,1,1], pad = 1, name="image_conv_3")
-
-        # now 13 x 13 x 384
-        self.image_conv4 = self._conv_relu_layer(bottom = self.image_conv3,filter_size = [3, 3, 192, 384], 
-                                                    strides = [1,1,1,1], pad = 1, group = 2, name="image_conv_4")
-
-        # now 13 x 13 x 384
-        self.image_conv5 = self._conv_relu_layer(bottom = self.image_conv4,filter_size = [3, 3, 192, 256], bias_init = 1.0, 
-                                                    strides = [1,1,1,1], pad = 1, group = 2, name="image_conv_5")
-
-        # now 13 x 13 x 256
-        self.image_pool5 = tf.nn.max_pool(self.image_conv5, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
-                                                    padding='VALID', name='image_pool5')
-
-        # now 6 x 6 x 256
         # tensorflow layer: n * w * h * c
         # but caffe layer is: n * c * h * w
 
@@ -105,7 +58,7 @@ class TRACKNET:
         # caffe kernel: out_c * in_c * h * w
 
         ########### Concatnate two layers ###########
-        self.concat = tf.concat([self.target_pool5, self.image_pool5], axis = 3) # 0, 1, 2, 3 - > 2, 3, 1, 0
+        self.concat = tf.concat([self.target_resid_2_result, self.image_resid_2_result], axis = 3) # 0, 1, 2, 3 - > 2, 3, 1, 0
 
         # important, since caffe has different layer dimension order
         self.concat = tf.transpose(self.concat, perm=[0,3,1,2]) 
@@ -141,28 +94,24 @@ class TRACKNET:
 	
 	# bottom = self.target, filter_size = [11, 11, 3, 96], strides = [1,4,4,1], name = "target_conv_1")
 	
-	def _preresid_cnn(self, input, bias_init = 0.0, trainable = False, name = None):
-        kernel = tf.Variable(tf.truncated_normal(filter_size = [5, 5,1, 32], dtype=tf.float16, stddev=1e-2), trainable=trainable, name='weights')
-        biases = tf.Variable(tf.constant(bias_init, shape=[32], dtype=tf.float16), trainable=trainable, name='biases')
+	def _basic_cnn(self, input, filter_size, bias_init = 0.0, trainable = True, name = None):
+        kernel = tf.Variable(tf.truncated_normal(filter_size, dtype=tf.float16, stddev=1e-2), trainable=trainable, name='weights')
+        biases = tf.Variable(tf.constant(bias_init, shape=[filter_size[3]], dtype=tf.float16), trainable=trainable, name='biases')
         self.parameters[name] = [kernel, biases]
         conv = tf.nn.conv2d(input, kernel, strides=[1, 2, 2, 1], padding='SAME')
         out = tf.nn.bias_add(conv, biases)
         return out
 		
-	def _resid_half(self, input, filter_size, strides, bias_init = 0.0, trainable = False, name = None):
+	def _resid_half(self, input, filter_size, strides, bias_init = 0.0, trainable = True, name = None):
         with tf.name_scope(name) as scope:
             normalized_output = tf.layers.batch_normalization(input, axis=1)
             relud_output = tf.nn.relu(normalized_output, name=scope)
             _activation_summary(relud_output)
-			# padding FIX
-			if (pad > 0):
-                paddings = [[0,0],[pad,pad],[pad,pad],[0,0]]
-                input = tf.pad(bottom, paddings, "CONSTANT")
             kernel = tf.Variable(tf.truncated_normal(filter_size, dtype=tf.float16,
                                                      stddev=1e-2), trainable=trainable, name='weights')
             biases = tf.Variable(tf.constant(bias_init, shape=[filter_size[3]], dtype=tf.float16), trainable=trainable, name='biases')
             self.parameters[name] = [kernel, biases]
-            conv = tf.nn.conv2d(relud_output, kernel, strides, padding='VALID')
+            conv = tf.nn.conv2d(relud_output, kernel, strides, padding='SAME')
             out = tf.nn.bias_add(conv, biases)
             return out
 			
