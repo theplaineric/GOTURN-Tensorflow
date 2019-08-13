@@ -20,16 +20,16 @@ class TRACKNET:
                                                     padding='VALID', name='target_pool0')
 													
 		# residual block #1
-		self.target_resid_1_connection = self._basic_cnn(self.target_pool0, filter_size = [1, 1, 1, 32], name = target_resid_1_connection)
+        self.target_resid_1_connection = self._basic_cnn(self.target_pool0, filter_size = [1, 1, 1, 32], name = target_resid_1_connection)
         self.target_resid_1a = _resid_half(self.target_pool0, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = target_resid_1a)
         self.target_resid_1b = _resid_half(self.target_resid_1a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = target_resid_1b)
-		self.target_resid_1_result = tf.add(self.target_resid_1_connection, self.target_resid_1b)
+        self.target_resid_1_result = tf.add(self.target_resid_1_connection, self.target_resid_1b)
 		
 		# residual block #2
-		self.target_resid_2_connection = self._basic_cnn(self.resid_1b, filter_size = [1, 1, 32, 32], name = target_resid_2_connection)
+        self.target_resid_2_connection = self._basic_cnn(self.resid_1b, filter_size = [1, 1, 32, 32], name = target_resid_2_connection)
         self.target_resid_2a = _resid_half(self.target_resid_1b, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = target_resid_2a)
         self.target_resid_2b = _resid_half(self.target_resid_2a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = target_resid_2b)
-		self.target_resid_2_result = tf.add(self.target_resid_2_connection, self.target_resid_2b)
+        self.target_resid_2_result = tf.add(self.target_resid_2_connection, self.target_resid_2b)
 
         ########### for image ###########
         # [filter_height, filter_width, in_channels, out_channels]
@@ -40,16 +40,16 @@ class TRACKNET:
                                                     padding='VALID', name='image_pool0')
 													
 		# residual block #1
-		self.image_resid_1_connection = self._basic_cnn(self.image_pool0, filter_size = [1, 1, 1, 32], name = image_resid_1_connection)
+        self.image_resid_1_connection = self._basic_cnn(self.image_pool0, filter_size = [1, 1, 1, 32], name = image_resid_1_connection)
         self.image_resid_1a = _resid_half(self.image_pool0, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = image_resid_1a)
         self.image_resid_1b = _resid_half(self.image_resid_1a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = image_resid_1b)
-		self.image_resid_1_result = tf.add(self.image_resid_1_connection, self.image_resid_1b)
+        self.image_resid_1_result = tf.add(self.image_resid_1_connection, self.image_resid_1b)
 		
 		# residual block #2
-		self.image_resid_2_connection = self._basic_cnn(self.resid_1b, filter_size = [1, 1, 32, 32], name = image_resid_2_connection)
+        self.image_resid_2_connection = self._basic_cnn(self.resid_1b, filter_size = [1, 1, 32, 32], name = image_resid_2_connection)
         self.image_resid_2a = _resid_half(self.image_resid_1b, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = image_resid_2a)
         self.image_resid_2b = _resid_half(self.image_resid_2a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = image_resid_2b)
-		self.image_resid_2_result = tf.add(self.image_resid_2_connection, self.image_resid_2b)
+        self.image_resid_2_result = tf.add(self.image_resid_2_connection, self.image_resid_2b)
 
         # tensorflow layer: n * w * h * c
         # but caffe layer is: n * c * h * w
@@ -94,7 +94,7 @@ class TRACKNET:
 	
 	# bottom = self.target, filter_size = [11, 11, 3, 96], strides = [1,4,4,1], name = "target_conv_1")
 	
-	def _basic_cnn(self, input, filter_size, bias_init = 0.0, trainable = True, name = None):
+    def _basic_cnn(self, input, filter_size, bias_init = 0.0, trainable = True, name = None):
         kernel = tf.Variable(tf.truncated_normal(filter_size, dtype=tf.float16, stddev=1e-2), trainable=trainable, name='weights')
         biases = tf.Variable(tf.constant(bias_init, shape=[filter_size[3]], dtype=tf.float16), trainable=trainable, name='biases')
         self.parameters[name] = [kernel, biases]
@@ -102,7 +102,7 @@ class TRACKNET:
         out = tf.nn.bias_add(conv, biases)
         return out
 		
-	def _resid_half(self, input, filter_size, strides, bias_init = 0.0, trainable = True, name = None):
+    def _resid_half(self, input, filter_size, strides, bias_init = 0.0, trainable = True, name = None):
         with tf.name_scope(name) as scope:
             normalized_output = tf.layers.batch_normalization(input, axis=1)
             relud_output = tf.nn.relu(normalized_output, name=scope)
@@ -114,21 +114,20 @@ class TRACKNET:
             conv = tf.nn.conv2d(relud_output, kernel, strides, padding='SAME')
             out = tf.nn.bias_add(conv, biases)
             return out
-			
-		
-	"""
-	Parameters: 
-	bottom (tf.placeholder(tf.float16, [batch_size, 227, 227, 3]): image input 
-	filter_size (array): w, h, in_channels, out_channels
-	strides (array): batch, height, width, channels
-	pad (int): pad int by width & height 
-	bias_init (double): what to initiate bias with 
-	group (1 or 2): determines whether to split this apart
-	trainable (boolean): determines whether weights and bias can be changed (aka trained)
-	
-	Returns:
-	tensor: result from relu activation
-	"""
+
+    """
+    Parameters: 
+    bottom (tf.placeholder(tf.float16, [batch_size, 227, 227, 3]): image input 
+    filter_size (array): w, h, in_channels, out_channels
+    strides (array): batch, height, width, channels
+    pad (int): pad int by width & height 
+    bias_init (double): what to initiate bias with 
+    group (1 or 2): determines whether to split this apart
+    trainable (boolean): determines whether weights and bias can be changed (aka trained)
+
+    Returns:
+    tensor: result from relu activation
+    """
     def _conv_relu_layer(self, input, filter_size, strides, pad = 0,bias_init = 0.0, trainable = False, name = None):
         with tf.name_scope(name) as scope:
 
@@ -267,8 +266,8 @@ class TRACKNET:
     
     def test(self):
         sess = tf.Session()
-        a = np.full((self.batch_size,227,227,3), 1) # numpy.full(shape, fill_value, dtype=None, order='C')
-        b = np.full((self.batch_size,227,227,3), 2)
+        a = np.full((self.batch_size,128,128,1), 1) # numpy.full(shape, fill_value, dtype=None, order='C')
+        b = np.full((self.batch_size,128,128,1), 2)
         sess.run(tf.global_variables_initializer())
 
         sess.run([self.fc4],feed_dict={self.image:a, self.target:b})
@@ -314,8 +313,8 @@ if __name__ == "__main__":
     tracknet = TRACKNET(10)
     tracknet.build()
     sess = tf.Session()
-    a = np.full((tracknet.batch_size,227,227,3), 1)
-    b = np.full((tracknet.batch_size,227,227,3), 2)
+    a = np.full((tracknet.batch_size,128,128,1), 1)
+    b = np.full((tracknet.batch_size,128,128,1), 2)
     sess.run(tf.global_variables_initializer())
     sess.run([tracknet.image_pool5],feed_dict={tracknet.image:a, tracknet.target:b})
 
