@@ -15,40 +15,40 @@ class TRACKNET:
         # [filter_height, filter_width, in_channels, out_channels]
 		# pre-residual blocks
 		# conv = tf.nn.conv2d(bottom, kernel, strides, padding='VALID')
-        self.target_conv0 = self._basic_cnn(self.target, filter_size = [5, 5, 1, 32], name=target_conv0)
+        self.target_conv0 = self._basic_cnn(self.target, filter_size = [5, 5, 1, 32], name='target_conv0')
         self.target_pool0 = tf.nn.max_pool(self.target_conv0, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
                                                     padding='VALID', name='target_pool0')
 													
 		# residual block #1
-        self.target_resid_1_connection = self._basic_cnn(self.target_pool0, filter_size = [1, 1, 1, 32], name = target_resid_1_connection)
-        self.target_resid_1a = _resid_half(self.target_pool0, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = target_resid_1a)
-        self.target_resid_1b = _resid_half(self.target_resid_1a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = target_resid_1b)
+        self.target_resid_1_connection = self._basic_cnn(self.target_pool0, filter_size = [1, 1, 32, 32], name = 'target_resid_1_connection')
+        self.target_resid_1a = self._resid_half(self.target_pool0, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = 'target_resid_1a')
+        self.target_resid_1b = self._resid_half(self.target_resid_1a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = 'target_resid_1b')
         self.target_resid_1_result = tf.add(self.target_resid_1_connection, self.target_resid_1b)
 		
 		# residual block #2
-        self.target_resid_2_connection = self._basic_cnn(self.resid_1b, filter_size = [1, 1, 32, 32], name = target_resid_2_connection)
-        self.target_resid_2a = _resid_half(self.target_resid_1b, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = target_resid_2a)
-        self.target_resid_2b = _resid_half(self.target_resid_2a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = target_resid_2b)
+        self.target_resid_2_connection = self._basic_cnn(self.target_resid_1_result, filter_size = [1, 1, 32, 32], name = 'target_resid_2_connection')
+        self.target_resid_2a = self._resid_half(self.target_resid_1b, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = 'target_resid_2a')
+        self.target_resid_2b = self._resid_half(self.target_resid_2a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = 'target_resid_2b')
         self.target_resid_2_result = tf.add(self.target_resid_2_connection, self.target_resid_2b)
 
         ########### for image ###########
         # [filter_height, filter_width, in_channels, out_channels]
 		# pre-residual blocks
 		# conv = tf.nn.conv2d(bottom, kernel, strides, padding='VALID')
-        self.image_conv0 = self._basic_cnn(self.image, filter_size = [5, 5, 1, 32], name=image_conv0)
+        self.image_conv0 = self._basic_cnn(self.image, filter_size = [5, 5, 1, 32], name='image_conv0')
         self.image_pool0 = tf.nn.max_pool(self.image_conv0, ksize = [1, 3, 3, 1], strides=[1, 2, 2, 1],
                                                     padding='VALID', name='image_pool0')
 													
 		# residual block #1
-        self.image_resid_1_connection = self._basic_cnn(self.image_pool0, filter_size = [1, 1, 1, 32], name = image_resid_1_connection)
-        self.image_resid_1a = _resid_half(self.image_pool0, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = image_resid_1a)
-        self.image_resid_1b = _resid_half(self.image_resid_1a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = image_resid_1b)
+        self.image_resid_1_connection = self._basic_cnn(self.image_pool0, filter_size = [1, 1, 32, 32], name = 'image_resid_1_connection')
+        self.image_resid_1a = self._resid_half(self.image_pool0, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = 'image_resid_1a')
+        self.image_resid_1b = self._resid_half(self.image_resid_1a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = 'image_resid_1b')
         self.image_resid_1_result = tf.add(self.image_resid_1_connection, self.image_resid_1b)
 		
 		# residual block #2
-        self.image_resid_2_connection = self._basic_cnn(self.resid_1b, filter_size = [1, 1, 32, 32], name = image_resid_2_connection)
-        self.image_resid_2a = _resid_half(self.image_resid_1b, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = image_resid_2a)
-        self.image_resid_2b = _resid_half(self.image_resid_2a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = image_resid_2b)
+        self.image_resid_2_connection = self._basic_cnn(self.image_resid_1_result, filter_size = [1, 1, 32, 32], name = 'image_resid_2_connection')
+        self.image_resid_2a = self._resid_half(self.image_resid_1b, filter_size = [3, 3, 32, 32], strides = [1, 2, 2, 1], name = 'image_resid_2a')
+        self.image_resid_2b = self._resid_half(self.image_resid_2a, filter_size = [3, 3, 32, 32], strides = [1, 1, 1, 1], name = 'image_resid_2b')
         self.image_resid_2_result = tf.add(self.image_resid_2_connection, self.image_resid_2b)
 
         # tensorflow layer: n * w * h * c
@@ -208,16 +208,14 @@ class TRACKNET:
         _variable_summaries(var)
         return var
     def print_shapes(self):
-        print("%s:"%(self.image_conv1),self.image_conv1.get_shape().as_list())
-        print("%s:"%(self.image_pool1),self.image_pool1.get_shape().as_list())
-        print("%s:"%(self.image_lrn1),self.image_lrn1.get_shape().as_list())
-        print("%s:"%(self.image_conv2),self.image_conv2.get_shape().as_list())
-        print("%s:"%(self.image_pool2),self.image_pool2.get_shape().as_list())
-        print("%s:"%(self.image_lrn2),self.image_lrn2.get_shape().as_list())
-        print("%s:"%(self.image_conv3),self.image_conv3.get_shape().as_list())
-        print("%s:"%(self.image_conv4),self.image_conv4.get_shape().as_list())
-        print("%s:"%(self.image_conv5),self.image_conv5.get_shape().as_list())
-        print("%s:"%(self.image_pool5),self.image_pool5.get_shape().as_list())
+        print("%s:"%(self.image_conv0),self.image_conv0.get_shape().as_list())
+        print("%s:"%(self.image_pool0),self.image_pool0.get_shape().as_list())
+        print("%s:"%(self.image_resid_1_connection),self.image_resid_1_connection.get_shape().as_list())
+        print("%s:"%(self.image_resid_1a), self.image_resid_1a.get_shape().as_list())
+        print("%s:"%(self.image_resid_1b), self.image_resid_1b.get_shape().as_list())
+        print("%s:"%(self.image_resid_2_connection),self.image_resid_2_connection.get_shape().as_list())
+        print("%s:"%(self.image_resid_2a), self.image_resid_2a.get_shape().as_list())
+        print("%s:"%(self.image_resid_2b), self.image_resid_2b.get_shape().as_list())
         print("%s:"%(self.concat),self.concat.get_shape().as_list())
         print("%s:"%(self.fc1),self.fc1.get_shape().as_list())
         print("%s:"%(self.fc2),self.fc2.get_shape().as_list())
@@ -229,27 +227,34 @@ class TRACKNET:
 
     def load_weight_from_dict(self,weights_dict,sess):
         # for convolutional layers
-        sess.run(self.parameters['target_conv_1'][0].assign(weights_dict['conv1']['weights']))
-        sess.run(self.parameters['target_conv_2'][0].assign(weights_dict['conv2']['weights']))
-        sess.run(self.parameters['target_conv_3'][0].assign(weights_dict['conv3']['weights']))
-        sess.run(self.parameters['target_conv_4'][0].assign(weights_dict['conv4']['weights']))
-        sess.run(self.parameters['target_conv_5'][0].assign(weights_dict['conv5']['weights']))
-        sess.run(self.parameters['image_conv_1'][0].assign(weights_dict['conv1_p']['weights']))
-        sess.run(self.parameters['image_conv_2'][0].assign(weights_dict['conv2_p']['weights']))
-        sess.run(self.parameters['image_conv_3'][0].assign(weights_dict['conv3_p']['weights']))
-        sess.run(self.parameters['image_conv_4'][0].assign(weights_dict['conv4_p']['weights']))
-        sess.run(self.parameters['image_conv_5'][0].assign(weights_dict['conv5_p']['weights']))
+        sess.run(self.parameters['target_conv0'][0].assign(weights_dict['conv0']['weights']))
+        sess.run(self.parameters['target_resid_1_connection'][0].assign(weights_dict['conv1']['weights']))
+        sess.run(self.parameters['target_resid_1a'][0].assign(weights_dict['conv1a']['weights']))
+        sess.run(self.parameters['target_resid_1b'][0].assign(weights_dict['conv1b']['weights']))
+        sess.run(self.parameters['target_resid_2_connection'][0].assign(weights_dict['conv2']['weights']))
+        sess.run(self.parameters['target_resid_2a'][0].assign(weights_dict['conv2a']['weights']))
+        sess.run(self.parameters['target_resid_2b'][0].assign(weights_dict['conv2b']['weights']))
+        sess.run(self.parameters['image_conv0'][0].assign(weights_dict['conv0_p']['weights']))
+        sess.run(self.parameters['image_resid_1_connection'][0].assign(weights_dict['conv1_p']['weights']))
+        sess.run(self.parameters['image_resid_1a'][0].assign(weights_dict['conv1a_p']['weights']))
+        sess.run(self.parameters['image_resid_1b'][0].assign(weights_dict['conv1b_p']['weights']))
+        sess.run(self.parameters['image_resid_2_connection'][0].assign(weights_dict['conv2_p']['weights']))
+        sess.run(self.parameters['image_resid_2a'][0].assign(weights_dict['conv2a_p']['weights']))
+        sess.run(self.parameters['image_resid_2b'][0].assign(weights_dict['conv2b_p']['weights']))
 
-        sess.run(self.parameters['target_conv_1'][1].assign(weights_dict['conv1']['bias']))
-        sess.run(self.parameters['target_conv_2'][1].assign(weights_dict['conv2']['bias']))
-        sess.run(self.parameters['target_conv_3'][1].assign(weights_dict['conv3']['bias']))
-        sess.run(self.parameters['target_conv_4'][1].assign(weights_dict['conv4']['bias']))
-        sess.run(self.parameters['target_conv_5'][1].assign(weights_dict['conv5']['bias']))
-        sess.run(self.parameters['image_conv_1'][1].assign(weights_dict['conv1_p']['bias']))
-        sess.run(self.parameters['image_conv_2'][1].assign(weights_dict['conv2_p']['bias']))
-        sess.run(self.parameters['image_conv_3'][1].assign(weights_dict['conv3_p']['bias']))
-        sess.run(self.parameters['image_conv_4'][1].assign(weights_dict['conv4_p']['bias']))
-        sess.run(self.parameters['image_conv_5'][1].assign(weights_dict['conv5_p']['bias']))
+        sess.run(self.parameters['target_resid_1_connection'][1].assign(weights_dict['conv1']['bias']))
+        sess.run(self.parameters['target_resid_1a'][1].assign(weights_dict['conv1a']['bias']))
+        sess.run(self.parameters['target_resid_1b'][1].assign(weights_dict['conv1b']['bias']))
+        sess.run(self.parameters['target_resid_2_connection'][1].assign(weights_dict['conv2']['bias']))
+        sess.run(self.parameters['target_resid_2a'][1].assign(weights_dict['conv2a']['bias']))
+        sess.run(self.parameters['target_resid_2b'][1].assign(weights_dict['conv2b']['bias']))
+        sess.run(self.parameters['image_conv0'][1].assign(weights_dict['conv0_p']['weights']))
+        sess.run(self.parameters['image_resid_1_connection'][1].assign(weights_dict['conv1_p']['bias']))
+        sess.run(self.parameters['image_resid_1a'][1].assign(weights_dict['conv1a_p']['bias']))
+        sess.run(self.parameters['image_resid_1b'][1].assign(weights_dict['conv1b_p']['bias']))
+        sess.run(self.parameters['image_resid_2_connection'][1].assign(weights_dict['conv2_p']['bias']))
+        sess.run(self.parameters['image_resid_2a'][1].assign(weights_dict['conv2a_p']['bias']))
+        sess.run(self.parameters['image_resid_2b'][1].assign(weights_dict['conv2b_p']['bias']))
 
         # for fully connected layers
         sess.run(self.parameters['fc1'][0].assign(weights_dict['fc6-new']['weights']))
