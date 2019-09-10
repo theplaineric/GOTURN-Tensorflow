@@ -16,7 +16,11 @@ class loader_alov:
     """Docstring for loader_alov. """
 
     def __init__(self, alov_folder, annotations_folder, logger):
-        """TODO: to be defined1. """
+        """
+        self.alov_videos = {}
+        self.category = {}
+
+        """
 
         self.logger = logger
         self.alov_folder = alov_folder
@@ -27,8 +31,8 @@ class loader_alov:
             logger.error('{} is not a valid directory'.format(alov_folder))
 
     def loaderAlov(self):
-        """TODO: Docstring for loaderAlov.
-        :returns: TODO
+        """
+        higher function, joins the alov video and annotation files together
 
         """
         logger = self.logger
@@ -51,7 +55,12 @@ class loader_alov:
         return [dir_name for dir_name in os.listdir(alov_folder) if os.path.isdir(os.path.join(alov_folder, dir_name))]
 
     def load_annotation_file(self, alov_sub_folder, annotation_file):
-
+        """
+        reads in annotations for each video and figures out bounding boxes for them
+        objVideo = video object container
+        alov_videos = [video objects]
+        category[sub_folders] has [video objects w/ annotations]
+        """
         video_path = os.path.join(self.alov_folder, alov_sub_folder, annotation_file.split('/')[-1].split('.')[0])
 
         objVideo = video(video_path)
@@ -81,8 +90,10 @@ class loader_alov:
         self.category[alov_sub_folder].append(self.alov_videos[video_name])
 
     def get_videos(self, isTrain=True, val_ratio=0.2):
-        """TODO: Docstring for get_videos.
-        :returns: TODO
+        """
+        goes by each category
+        category_video = [videos in a category]
+        return [all videos in alov for training and not cross-val]
         """
 
         videos = []

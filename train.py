@@ -13,68 +13,17 @@ HEIGHT = 128
 train_txt = "train_set.txt"
 logfile = "train.log"
 
-
-def load_training_set(train_file):
-    '''
-    return train_set
-    '''
-    ftrain = open(train_file, "r")
-    trainlines = ftrain.read().splitlines()
-    train_target = []
-    train_search = []
-    train_box = []
-    for line in trainlines:
-        line = line.split(",")
-        train_target.append(line[0])
-        train_search.append(line[1])
-        box = [10 * float(line[2]), 10 * float(line[3]), 10 * float(line[4]), 10 * float(line[5])]
-        train_box.append(box)
-    ftrain.close()
-
-    return [train_target, train_search, train_box]
-
-
-def data_reader(input_queue):
-    '''
-    this function only read the one pair of images and from the queue
-    '''
-    search_img = tf.read_file(input_queue[0])
-    target_img = tf.read_file(input_queue[1])
-    search_tensor = tf.to_float(tf.image.decode_jpeg(search_img, channels=3))
-    search_tensor = tf.image.resize_images(search_tensor, [HEIGHT, WIDTH],
-                                           method=tf.image.ResizeMethod.BILINEAR)
-    target_tensor = tf.to_float(tf.image.decode_jpeg(target_img, channels=3))
-    target_tensor = tf.image.resize_images(target_tensor, [HEIGHT, WIDTH],
-                                           method=tf.image.ResizeMethod.BILINEAR)
-    box_tensor = input_queue[2]
-    return [search_tensor, target_tensor, box_tensor]
-
-
-def next_batch(input_queue):
-    min_queue_examples = 128
-    num_threads = 8
-    [search_tensor, target_tensor, box_tensor] = data_reader(input_queue)
-    [search_batch, target_batch, box_batch] = tf.train.shuffle_batch(
-        [search_tensor, target_tensor, box_tensor],
-        batch_size=BATCH_SIZE,
-        num_threads=num_threads,
-        capacity=min_queue_examples + (num_threads + 2) * BATCH_SIZE,
-        seed=88,
-        min_after_dequeue=min_queue_examples)
-    return [search_batch, target_batch, box_batch]
-
-
 if __name__ == "__main__":
     if (os.path.isfile(logfile)):
         os.remove(logfile)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
                         level=logging.DEBUG, filename=logfile)
 
-    [train_target, train_search, train_box] = load_training_set(train_txt)
+    # connect to
     target_tensors = tf.convert_to_tensor(train_target, dtype=tf.string)
     search_tensors = tf.convert_to_tensor(train_search, dtype=tf.string)
     box_tensors = tf.convert_to_tensor(train_box, dtype=tf.float64)
-    input_queue = tf.train.slice_input_producer([search_tensors, target_tensors, box_tensors], shuffle=True)
+    input_queue = tf.data.Dataset.from_tensor_slices([search_tensors, target_tensors, box_tensors]).shuffle=(tf.shape()))
     batch_queue = next_batch(input_queue)
     tracknet = goturn_net.TRACKNET(BATCH_SIZE)
     tracknet.build()

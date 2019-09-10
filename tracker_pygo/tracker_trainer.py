@@ -41,8 +41,8 @@ class tracker_trainer:
                                     self.bbox_gt_scaled_batch_)
 
     def make_training_examples(self):
-        """TODO: Docstring for make_training_examples.
-        :returns: TODO
+        """
+        makes the true example and attaches them to the respective lists
 
         """
         example_generator = self.example_generator_

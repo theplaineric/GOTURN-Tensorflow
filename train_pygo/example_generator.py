@@ -37,8 +37,8 @@ class example_generator:
         self.logger = logger
 
     def make_true_example(self):
-        """TODO: Docstring for make_true_example.
-        :returns: TODO
+        """
+        crops and centers the bounding boxes
 
         """
 
