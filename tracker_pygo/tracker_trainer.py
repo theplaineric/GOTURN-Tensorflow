@@ -63,6 +63,7 @@ class tracker_trainer:
         example_generator.reset(bbox_prev, bbox_curr, img_prev, img_curr)
         self.make_training_examples()
 
+        # fix
         while len(self.images) > 0:
             num_in_batch = len(self.images_batch_)
             num_left_in_batch = self.kBatchSize - num_in_batch
