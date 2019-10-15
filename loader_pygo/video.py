@@ -28,7 +28,7 @@ class video:
 
     def load_annotation(self, annotation_index):
         """TODO: Docstring for load_annotation.
-        :returns: TODO
+        returns: TODO
 
         """
         ann_frame = self.annotations[annotation_index]

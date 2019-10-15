@@ -39,7 +39,7 @@ class example_generator:
     def make_true_example(self):
         """
         crops and centers the bounding boxes
-
+        return: image, target, bboxgtscaled
         """
 
         curr_prior_tight = self.bbox_prev_gt_
@@ -47,7 +47,7 @@ class example_generator:
         curr_search_region, curr_search_location, edge_spacing_x, edge_spacing_y = cropPadImage(curr_prior_tight, self.img_curr_)
 
         bbox_curr_gt = self.bbox_curr_gt_
-        bbox_curr_gt_recentered = BoundingBox(0, 0, 0, 0)
+        bbox_curr_gt_recentered = BoundingBox(0, 0, 0, 0).
         bbox_curr_gt_recentered = bbox_curr_gt.recenter(curr_search_location, edge_spacing_x, edge_spacing_y, bbox_curr_gt_recentered)
         bbox_curr_gt_recentered.scale(curr_search_region)
 
@@ -119,8 +119,13 @@ class example_generator:
         return image_rand_focus, target_pad, bbox_gt_scaled
 
     def reset(self, bbox_curr, bbox_prev, img_curr, img_prev):
-        """TODO: to be defined1. """
-
+        """
+        Parameters:
+        bbox_curr: curr frame bbox
+        bbox_prev: prev frame bbox
+        img_curr: image
+        img_prev: target, cropped
+        """
         target_pad, _, _, _ = cropPadImage(bbox_prev, img_prev)
         self.img_curr_ = img_curr
         self.bbox_curr_gt_ = bbox_curr

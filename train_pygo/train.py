@@ -14,6 +14,7 @@ from ..network.regressor_train import regressor_train
 from ..tracker.tracker_trainer import tracker_trainer
 import os
 import numpy as np
+from .EntryGenerator import EntryGenerator
 
 setproctitle.setproctitle('TRAIN_TRACKER_IMAGENET_ALOV')
 logger = setup_logger(logfile=None)
@@ -38,6 +39,17 @@ kNumBatches = 500000
 
 
 # TODO: create new class from https://towardsdatascience.com/how-to-quickly-build-a-tensorflow-training-pipeline-15e9ae4d78a0
+class Dataset(object):
+    def __init__(self, generator=EntryGenerator())):
+        self.next_element = self.build_iterator(generator)
+
+    def build_iterator(self, entry_gen: EntryGenerator()):
+        batch_size = 10
+        prefetch_batch_buffer
+
+        dataset = tf.data.Dataset.from_generator(entry_gen.get_next_entry, \
+                                                 output_types={EntryGenerator.image: , EntryGenerator.target: , EntryGenerator.bbox_x1: , EntryGenerator.bbox_y1: , EntryGenerator.bbox_x2: , EntryGenerator.bbox_y2: })
+
 
 def train_image(image_loader, images, tracker_trainer):
     """TODO: Docstring for train_image.
