@@ -48,7 +48,11 @@ class Dataset(object):
         prefetch_batch_buffer
 
         dataset = tf.data.Dataset.from_generator(entry_gen.get_next_entry, \
-                                                 output_types={EntryGenerator.image: , EntryGenerator.target: , EntryGenerator.bbox_x1: , EntryGenerator.bbox_y1: , EntryGenerator.bbox_x2: , EntryGenerator.bbox_y2: })
+                                                 output_types={EntryGenerator.image: tf.Tensor, EntryGenerator.target: tf.Tensor, EntryGenerator.bbox_x1: tf.int64, EntryGenerator.bbox_y1: tf.int64, EntryGenerator.bbox_x2: tf.int64, EntryGenerator.bbox_y2: tf.int64})
+
+        # dataset = dataset.map() - don't even need this
+        dataset = dataset.batch(batch_size)
+        dataset = dataset.prefetch(prefetch_batch_buffer)
 
 
 def train_image(image_loader, images, tracker_trainer):
