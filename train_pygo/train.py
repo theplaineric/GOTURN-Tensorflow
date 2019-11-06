@@ -50,6 +50,7 @@ class Dataset(object):
         dataset = tf.data.Dataset.from_generator(entry_gen.get_next_entry, \
                                                  output_types={EntryGenerator.image: tf.Tensor, EntryGenerator.target: tf.Tensor, EntryGenerator.bbox_x1: tf.int64, EntryGenerator.bbox_y1: tf.int64, EntryGenerator.bbox_x2: tf.int64, EntryGenerator.bbox_y2: tf.int64})
 
+
         # dataset = dataset.map() - don't even need this
         dataset = dataset.batch(batch_size)
         dataset = dataset.prefetch(prefetch_batch_buffer)
